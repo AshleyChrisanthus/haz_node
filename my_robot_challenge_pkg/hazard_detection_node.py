@@ -22,12 +22,12 @@ class HazardDetectionNode(Node):
         self.create_subscription(LaserScan, '/scan', self.store_scan, 10)
         self.get_logger().info('Subscribed to /scan')
 
-        # # Subscribe to camera info (intrinsic parameters)
-        # self.create_subscription(CameraInfo, '/camera/depth/camera_info', self.store_camera_info, 10)
-        # self.get_logger().info('Subscribed to /camera/depth/camera_info')
-        # Subscribe to camera info (intrinsic parameters)
-        self.create_subscription(CameraInfo, '/oak/stereo/image_raw/compressedDepth', self.store_camera_info, 10)
-        self.get_logger().info('Subscribed to /oak/stereo/image_raw/compressedDepth')
+        # Subscribe to camera info for rosbot 2 (intrinsic parameters)
+        self.create_subscription(CameraInfo, '/camera/depth/camera_info', self.store_camera_info, 10)
+        self.get_logger().info('Subscribed to /camera/depth/camera_info')
+        # # Subscribe to camera info for rosbot 3 (intrinsic parameters)
+        # self.create_subscription(CameraInfo, '/oak/stereo/image_raw/compressedDepth', self.store_camera_info, 10)
+        # self.get_logger().info('Subscribed to /oak/stereo/image_raw/compressedDepth')
 
         # Publisher for markers (for visualization in RViz)
         self.marker_publisher = self.create_publisher(Marker, '/hazards', 10)
