@@ -12,20 +12,20 @@ def generate_launch_description():
     # aiil_gazebo_dir = get_package_share_directory('aiil_gazebo')
     aiil_rosbot_demo_dir = get_package_share_directory('aiil_rosbot_demo')
     
-    # return LaunchDescription([
-    #     # Launch SLAM
-    #     IncludeLaunchDescription(
-    #         PythonLaunchDescriptionSource(
-    #             os.path.join(aiil_gazebo_dir, 'launch', 'slam.launch.py')
-    #         )
-    #     ),
+    return LaunchDescription([
+        # # Launch SLAM
+        # IncludeLaunchDescription(
+        #     PythonLaunchDescriptionSource(
+        #         os.path.join(aiil_gazebo_dir, 'launch', 'slam.launch.py')
+        #     )
+        # ),
 
-    #     # Launch Navigation
-    #     IncludeLaunchDescription(
-    #         PythonLaunchDescriptionSource(
-    #             os.path.join(aiil_gazebo_dir, 'launch', 'nav.launch.py')
-    #         )
-    #     ),
+        # # Launch Navigation
+        # IncludeLaunchDescription(
+        #     PythonLaunchDescriptionSource(
+        #         os.path.join(aiil_gazebo_dir, 'launch', 'nav.launch.py')
+        #     )
+        # ),
 
         # # Launch Find Object 2D (with gui:=false)
         # IncludeLaunchDescription(
