@@ -14,15 +14,28 @@ class HazardDetectionNode(Node):
     def __init__(self):
         super().__init__('hazard_detection_node')
 
+        # Subscribe to object detections
         self.create_subscription(ObjectsStamped, '/objectsStamped', self.handle_objects, 10)
+        self.get_logger().info('Subscribed to /objectsStamped')
+
+        # Subscribe to laser scan data
         self.create_subscription(LaserScan, '/scan', self.store_scan, 10)
+        self.get_logger().info('Subscribed to /scan')
+
+        # Subscribe to camera info (intrinsic parameters)
         self.create_subscription(CameraInfo, '/camera/depth/camera_info', self.store_camera_info, 10)
+        self.get_logger().info('Subscribed to /camera/depth/camera_info')
 
+        # Publisher for markers (for visualization in RViz)
         self.marker_publisher = self.create_publisher(Marker, '/hazards', 10)
+        self.get_logger().info('Publisher set up for /hazards')
 
+        # TF Buffer and Listener for coordinate transformations
         self.tf_buffer = tf2_ros.Buffer()
         self.tf_listener = tf2_ros.TransformListener(self.tf_buffer, self)
+        self.get_logger().info('TF listener initialized')
 
+        # Initialize instance variables
         self.laser_scan = None
         self.camera_info = None
         self.published_ids = set()
@@ -31,13 +44,18 @@ class HazardDetectionNode(Node):
 
     def store_camera_info(self, msg):
         self.camera_info = msg
+        self.get_logger().info(f'Camera info received: {msg.width}x{msg.height}, K = {msg.k}')
 
     def store_scan(self, msg):
         self.laser_scan = msg
+        self.get_logger().info(f'Laser scan data received: {len(msg.ranges)} range readings')
 
     def handle_objects(self, msg):
         if self.laser_scan is None or self.camera_info is None or not msg.objects.data:
+            self.get_logger().warning('Missing necessary data: laser_scan, camera_info, or object detections.')
             return
+
+        self.get_logger().info(f'Handling {len(msg.objects.data) // 12} objects.')
 
         for i in range(0, len(msg.objects.data), 12):
             data = msg.objects.data[i:i+12]
@@ -59,23 +77,14 @@ class HazardDetectionNode(Node):
                 if not np.isfinite(depth):
                     continue
 
-                # X = depth * (u - cx) / fx
-                # Y = depth * (v - cy) / fy
-                # Z = depth
-
                 angle = self.laser_scan.angle_min + index * self.laser_scan.angle_increment
                 X = depth * np.cos(angle)
                 Y = depth * np.sin(angle)
                 Z = 0.0
 
                 point = PointStamped()
-                # point.header.frame_id = self.camera_info.header.frame_id
                 point.header.frame_id = self.laser_scan.header.frame_id
-                # point.header.stamp = self.get_clock().now().to_msg()
                 point.header.stamp = self.laser_scan.header.stamp
-                # point.header.stamp = self.camera_info.header.stamp
-                # latest_common_time = self.tf_buffer.get_latest_common_time('camera_depth_optical_frame', 'map')
-                # point.header.stamp = latest_common_time
 
                 point.point.x = X
                 point.point.y = Y
@@ -83,9 +92,10 @@ class HazardDetectionNode(Node):
 
                 try:
                     transformed = self.tf_buffer.transform(point, 'base_link', timeout=rclpy.duration.Duration(seconds=0.1))
-                    
-                    # # Now transform from base_link to map
+                    self.get_logger().info(f'Transformed point to base_link: ({transformed.point.x}, {transformed.point.y}, {transformed.point.z})')
+
                     transformed = self.tf_buffer.transform(transformed, 'map', timeout=rclpy.duration.Duration(seconds=0.1))
+                    self.get_logger().info(f'Transformed point to map: ({transformed.point.x}, {transformed.point.y}, {transformed.point.z})')
 
                     self.publish_marker(obj_id, transformed)
 
@@ -99,7 +109,6 @@ class HazardDetectionNode(Node):
 
         marker = Marker()
         marker.header.frame_id = 'map'
-        # marker.header.frame_id = 'base_link'
         marker.header.stamp = self.get_clock().now().to_msg()
         marker.ns = 'hazards'
         marker.id = obj_id
