@@ -114,7 +114,10 @@ class HazardDetectionNode(Node):
         marker.type = Marker.SPHERE
         marker.action = Marker.ADD
 
-        marker.pose.position = map_point.point
+        # marker.pose.position = map_point.point
+        marker.pose.position.x = point.point.x
+        marker.pose.position.y = point.point.y
+        marker.pose.position.z = point.point.z
         marker.pose.orientation.w = 1.0
 
         marker.scale.x = marker.scale.y = marker.scale.z = 0.2
