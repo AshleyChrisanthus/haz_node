@@ -22,8 +22,6 @@ class HazardDetectionNode(Node):
         self.scan = None
         self.seen_ids = set()
 
-        self.start_trigger_publisher = self.create_publisher(Empty, "/trigger_start", 10)
-
         self.get_logger().info('Hazard Detection Node is up and running.')
 
     def initialize_subscribers(self):
@@ -32,6 +30,8 @@ class HazardDetectionNode(Node):
 
     def initialize_publishers(self):
         self.hazard_marker_pub = self.create_publisher(Marker, '/hazards', 10)
+        self.start_trigger_publisher = self.create_publisher(Empty, '/trigger_start', 10)
+        self.home_trigger_publisher = self.create_publisher(Empty, '/trigger_home', 10)  # New publisher for home trigger
 
     def setup_tf(self):
         self.tf_buffer = tf2_ros.Buffer()
@@ -61,13 +61,11 @@ class HazardDetectionNode(Node):
         bbox_x = obj_data[3]
         bbox_width = obj_data[5]
 
-
         if object_id == 13:
-            self.get_logger().info("Start marker detected")
+            self.get_logger().info("Start marker detected.")
             msg = Empty()
             self.start_trigger_publisher.publish(msg)
             return
-            
 
         image_center_x = bbox_x + bbox_width / 2.0
         normalized_x = image_center_x / 800
@@ -124,10 +122,15 @@ class HazardDetectionNode(Node):
         marker.color.g = 0.0
         marker.color.b = 0.0
         marker.color.a = 0.8
-        # marker.lifetime = rclpy.duration.Duration(seconds=10.0).to_msg()
 
         self.hazard_marker_pub.publish(marker)
         self.get_logger().info(f'Marker published for object {obj_id}.')
+
+        # Check if 5 unique hazards have been detected
+        if len(self.seen_ids) == 5:
+            self.get_logger().info('Five hazard markers detected. Triggering return to home.')
+            empty_msg = Empty()
+            self.home_trigger_publisher.publish(empty_msg)
 
 def main():
     rclpy.init()
